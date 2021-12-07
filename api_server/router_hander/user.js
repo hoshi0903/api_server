@@ -3,6 +3,11 @@ const db = require('../db/index.js')
 
 // 2.导入bcryptjs 加密用户密码的包
 const bcrypt = require('bcryptjs')
+
+// 3.导入jsonwebtoken 包 生成token字符串
+const jwt = require('jsonwebtoken')
+// 导入全局的配置文件
+const config = require('../config')
 // 注册新用户的处理函数
 exports.regUser = (req, res) => {
 
@@ -82,5 +87,47 @@ exports.regUser = (req, res) => {
 
 // 登陆的处理函数
 exports.login = (req, res) => {
-    res.send('login ok')
+    // 接收表单数据
+    const userinfo = req.body
+
+    // 定义SQL语句
+    const sqlStr = 'select * from my_db_01.dv_users where username=?'
+
+    // 执行SQL语句 查询用户的数据
+    db.query(sqlStr, userinfo.username, function(err, results){
+        // 执行SQL语句失败
+        if(err) return res.cc(err)
+
+        // 执行SQL语句成功，但是获取到的数据条数不等于1（没有数据）
+        if(results.length !== 1) return res.cc('登陆失败')
+
+        // 判断密码是否正确
+        // 调用bcrypt.compareSync(用户提交的密码，数据库的密码)方法比较密码是否一致
+        // results 是一个数组
+        const compareResult = bcrypt.compareSync(userinfo.password, results[0].password)
+        // 返回值是布尔值(true：一致，false: 不一致)
+        if(!compareResult) {
+            return res.cc('密码不一致，登陆失败')
+        }
+        
+        // 生成JWT的token字符串
+        // 在生成token字符串的时候，因为token是保留在浏览器中的，所以一定要剔除密码，头像等敏感信息
+        const user = {...results[0], password:'',user_prc:''}
+
+        // 在终端下载生成token字符串的包：npm i jsonwebtoken@8.5.1
+        // 在头部导入 jsonwebtoken 包
+
+        // 生产 token 字符串：使用方法jwt.sign(要加密的数据，密钥，时限)
+        const tokenStr = jwt.sign(user,config.jwtSecretKey,{ expiresIn: '10h'})
+        // 调用res.send() 将 token 响应给客户端
+        res.send({
+            status: 0,
+            message: '登陆成功！',
+            token: tokenStr
+        })
+    })
+
+
+
+
 }

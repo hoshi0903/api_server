@@ -12,6 +12,19 @@ app.use(cors())
 // 配置解析application x-www-form-urlencoded 模式的表单数据 的中间件
 app.use(express.urlencoded({ extended: false}))
 
+
+
+// 一定要在路由之前配置解析token 的中间件
+// 导入全局的配置文件
+const config = require('./config')
+
+// 解析 token 中间件
+const expressJWT = require('express-jwt')
+// unless({ path: [/^\/api\//] }) 指定哪些接口不需要进行身份认证
+// 只要配置成功了express-jwt 这个中间件, 就可以把解析出来的用户信息,挂载到req.user 属性上
+app.use(expressJWT({ secret: config.jwtSecretKey }).unless({ path: [/^\/api\//] }))
+
+
 // 优化res.send()代码
 // 在处理函数中需要多次调用res.send()向客户端响应处理失败的结果，为了简化代码可以手动分装一个res.cc()函数
 // 在路由之前，声明一个全局中间件，为res对象挂载一个res.cc()函数
@@ -28,7 +41,6 @@ app.use(function(req, res, next){
 
 // 导入并注册路由模块
 const userRouter = require('./router/user')
-const expressJoi = require('@escook/express-joi')
 app.use('/api',userRouter)
 
 //定义错误级别的中间件
@@ -36,7 +48,11 @@ app.use((err, reg, res, next) => {
     if(err instanceof joi.ValidationError) return res.cc(err) 
         // 未知的错误
         res.cc(err)
+    
+    // 捕获身份认证失败的错误
+    if(err.name === 'UnauthorizedError') return res.cc('身份认证失败')
 })
+
 
 // 启动服务器
 app.listen(3007,(req, res) => {
