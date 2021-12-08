@@ -23,5 +23,6 @@ userRouter.post('/reguser', expressJoi(reg_login_schema), user_hander.regUser)
 // 挂载路由 登陆
 userRouter.post('/login', expressJoi(reg_login_schema), user_hander.login)
 
+
 // 共享出去router模块
 module.exports = userRouter

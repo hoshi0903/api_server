@@ -20,7 +20,7 @@ const config = require('./config')
 
 // 解析 token 中间件
 const expressJWT = require('express-jwt')
-// unless({ path: [/^\/api\//] }) 指定哪些接口不需要进行身份认证
+// unless({ path: [/^\/api\//] }) 指定/api接口不需要进行身份认证(其他接口则需要在headers提交token字符串来验证身份)
 // 只要配置成功了express-jwt 这个中间件, 就可以把解析出来的用户信息,挂载到req.user 属性上
 app.use(expressJWT({ secret: config.jwtSecretKey }).unless({ path: [/^\/api\//] }))
 
@@ -39,18 +39,20 @@ app.use(function(req, res, next){
     next()
 })
 
-// 导入并注册路由模块
+// 导入并注册用户路由模块
 const userRouter = require('./router/user')
-app.use('/api',userRouter)
+app.use('/api', userRouter)
+
+
+// 导入并注册用户信息的路由模块
+const userinfoRouter = require('./router/userinfo')
+app.use('/my', userinfoRouter)
 
 //定义错误级别的中间件
 app.use((err, reg, res, next) => {
     if(err instanceof joi.ValidationError) return res.cc(err) 
         // 未知的错误
         res.cc(err)
-    
-    // 捕获身份认证失败的错误
-    if(err.name === 'UnauthorizedError') return res.cc('身份认证失败')
 })
 
 
