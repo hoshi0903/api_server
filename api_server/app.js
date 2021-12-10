@@ -48,6 +48,10 @@ app.use('/api', userRouter)
 const userinfoRouter = require('./router/userinfo')
 app.use('/my', userinfoRouter)
 
+// 导入文章分类的路由模块
+const artCateRouter = require('./router/artcate')
+app.use('/my/article',artCateRouter)
+
 //定义错误级别的中间件
 app.use((err, reg, res, next) => {
     if(err instanceof joi.ValidationError) return res.cc(err) 
